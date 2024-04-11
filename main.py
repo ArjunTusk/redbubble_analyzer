@@ -4,56 +4,110 @@ from tkinter import _setit
 
 import calculations
 
-
-def ladida():
-    print(valu.get())
+"""
+calls the second set of radio buttons. Disappears radio btns if item =0. Display otherwise
+Also updates the drop down menu with relevant options.
+"""
 
 
 def print_it():
-    r3.pack()
-    r4.pack()
-
-
-def lala(*args):
-    r3.pack()
-    r4.pack()
-    if val.get() == '1':
-        drop["menu"].delete(0, "end")
-        for option in options:
-            drop["menu"].add_command(label=option, command=_setit(drop_dwn, option))
+    if item.get() == "0":
+        r3.forget()
+        r4.forget()
     else:
+        r3.grid()
+        r4.grid()
+    if int(item.get()) == 2:
+        options1 = ["Jan - March", "April - June", "Jul - Sep", "Oct - Dec"]
         drop["menu"].delete(0, "end")
         for option in options1:
-            drop["menu"].add_command(label=option, command=_setit(drop_dwn, option))
-    drop_dwn.set("")
+            drop["menu"].add_command(label=option, command=_setit(drp_, option))
+    else:
+        drop["menu"].delete(0, "end")
+        for option in options:
+            drop["menu"].add_command(label=option, command=_setit(drp_, option))
+
+
+"""
+Removes the buttons then displays drop down menu
+"""
+
+
+def next_up(r5, r6):
+    r5.forget()
+    r6.forget()
     rt_wn.update()
-    drop.pack()
+    drop.grid()
+    label.grid_forget()
+    listbox.grid_forget()
 
 
-def print_variable(variable):
-    variable_name = [name for name, value in locals().items() if value is variable][0]
-    print(f"Variable name using locals(): {variable_name}")
+def select_drop(*args):
+    run_process()
+
+"""
+For use when selecting optimal prices.
+options22 is the dict that holds the time ranges
+"""
+def run_process():
+    final_eval = 0.0
+    final_lol = {}
+    options22 = {"Jan - March": [1, 3], "April - June": [4, 6], "Jul - Sep": [7, 9], "Oct - Dec": [10, 12]}
+    if item.get() == "1":
+        final_eval = access_data.optimal_price("Price", valu.get(), drp_.get())
+        if final_eval != -1:
+            final_string = "The best price for max " + valu.get() + " is " + str(final_eval)
+            final_mess.config(text=final_string)
+            final_mess.grid()
+    else:
+        index = 1
+        aa = access_data.best_prod_for_season(options22[drp_.get()][0], options22[drp_.get()][1], valu.get())
+        final_lol = aa
+        bb = ""
+        label.config(text=("Items to sell during " + drp_.get() + " and optimal sales price."))
+        for key, value in aa.items():
+            bb = f"{key}: {value}"
+            listbox.insert(index, bb)
+            index += 1
+    label.grid()
+    listbox.grid()
+    for g in range(len(final_lol)):
+        listbox.delete(g)
+    final_mess.forget()
+    drp_.set("")
+    drop.grid()
 
 
 rt_wn = Tk()
+drp_ = StringVar()
 access_data = calculations.calculations("csvs to load")
-val = StringVar(rt_wn, "0")
-valu = StringVar(rt_wn, "0")
+# item = first set of radio buttons variables
+item = StringVar(rt_wn, "0")
+
+# valu = second set of radio buttons variables
+valu = StringVar(rt_wn, " ")
+# first set of radio buttons
 r1 = Radiobutton(rt_wn, text='Suggest Best Price for Quantity or Profit', value=1, command=print_it,
-                 variable=val)
-r2 = Radiobutton(rt_wn, text="Optimal Prices by Seasons", value=2, command=print_it, variable=val)
-r1.pack()
-r2.pack()
+                 variable=item)
+r2 = Radiobutton(rt_wn, text="Optimal Prices by Seasons", value=2, command=print_it, variable=item)
+r1.grid()
+r2.grid()
 
-optionz = access_data.get_dataFrame()["Product"].sort_values(ascending=True).unique()
+# second set of radio buttons
+r3 = Radiobutton(rt_wn, text='Quantity', value="Quantity", command=lambda: next_up(r3, r4), variable=valu)
+r4 = Radiobutton(rt_wn, text="Profit", value="Profit", command=lambda: next_up(r3, r4), variable=valu)
+
+# Drop down menu and options
+optionz = access_data.get_dataframe()["Product"].sort_values(ascending=True).unique()
 options = optionz.tolist()
-options1 = ["Jan - March", "April - June", "Jul - Sep", "Oct - Dec"]
-r3 = Radiobutton(rt_wn, text='Quantity', value=3, command=lala, variable=valu)
-r4 = Radiobutton(rt_wn, text="Profit", value=4, command=lala, variable=valu)
-drop_dwn = StringVar()
-drop = OptionMenu(rt_wn, drop_dwn, *options1)
-drop.forget()
-rt_wn.mainloop()
-"""
+drop = OptionMenu(rt_wn, drp_, *options)
+drp_.trace_add("write", select_drop)
 
+# Label and List box
+label = Message(rt_wn, width=300, text="Best", )
+listbox = Listbox(rt_wn, height=20, width=30)
+final_mess = Message(rt_wn, text="Not enough data. Add more records or try another product")
+rt_wn.mainloop()
+
+"""
 """

@@ -35,14 +35,14 @@ class calculations:
             'Quantity']
         self.dataframe = self.dataframe.rename(columns={'Retail Price (USD)': 'Price'})
         self.dataframe = self.dataframe.rename(columns={'Manufacturing Price (USD)': 'Cost'})
-        self.dataframe = self.dataframe.rename(columns={'Artist Margin (USD)': 'Margin'})
+        self.dataframe = self.dataframe.rename(columns={'Artist Margin (USD)': 'Profit'})
         columns_to_round = ['Price', 'Cost']
         self.dataframe[columns_to_round] = self.dataframe[columns_to_round].round(0)
-        columns_to = ['Margin']
+        columns_to = ['Profit']
         self.dataframe[columns_to] = self.dataframe[columns_to].round(2)
 
     # returns the data frame
-    def get_dataFrame(self):
+    def get_dataframe(self):
         return self.dataframe
 
     # gets the csv files from a folder
@@ -53,7 +53,6 @@ class calculations:
 
         # Iterate through each CSV file and read it into a DataFrame
         for file in csv_files:
-
             file_path = os.path.join(absolute_folder_path, file)
             self.parse_file(file_path)
         self.dataframe['Order Date'] = pd.to_datetime(self.dataframe['Order Date'])
@@ -70,8 +69,6 @@ class calculations:
                 self.dataframe = dfs
             else:
                 self.dataframe = pd.concat([self.dataframe, dfs], ignore_index=True)
-
-
 
     # calls parse file to append to data frame. Moves file to destination folder.
     def add_file(self, file_path):
@@ -97,44 +94,34 @@ class calculations:
     def optimal_price(self, x_axis, y_axis, product_sell):
         extracted_rows = self.dataframe[self.dataframe['Product'] == product_sell]
         extracted_rows = extracted_rows.reset_index()
-        if extracted_rows['Margin'].min() >= 1:
+
+        if extracted_rows['Profit'].min() >= 1:
             extracted_rows = filter_out(extracted_rows, {x_axis, y_axis})
         else:
             extracted_rows = filter_out(extracted_rows, {'Quantity'})
         result = extracted_rows.groupby('Price').agg(
-            {'Margin': 'median', 'Quantity': 'sum', 'Cost': 'median'}).reset_index()
-        result['sum'] = result['Margin'] * result['Quantity']
-        print(result)
-        if y_axis == 'Margin':
-            y_axis = 'sum'
+            {'Profit': 'median', 'Quantity': 'sum', 'Cost': 'median'}).reset_index()
+        result['sum'] = result['Profit'] * result['Quantity']
+        if result.shape[0] < 3:
+            if y_axis == 'Profit':
+                y_axis = 'sum'
+            return -1
         return result.loc[result[y_axis] == result[y_axis].max(), 'Price'].values[0]
         # Creates a simple linear regressions
 
-    def optimal_(self, extracted_rows):
-        result = extracted_rows.groupby('Price').agg(
-            {'Margin': 'median', 'Quantity': 'sum', 'Cost': 'median'}).reset_index()
-        result['sum'] = result['Margin'] * result['Quantity']
-        return result.loc[result['sum'] == result['sum'].max(), 'Price'].values[0]
-
-    def best_prod_for_season(self, start_month, end_month):
-        lada = self.get_dataFrame()['Product'].unique()
+    def best_prod_for_season(self, start_month, end_month, y_axis):
+        lada = self.get_dataframe()['Product'].unique()
         a = lada.tolist()
         my_dict = {}
         i = start_month
-        for val in a:
-            while i in range(end_month+1):
-                c = self.date_range_parse(i, i + 2, 'month')
-                i += 3
-                c = c[c['Product'] == val]
-                column_sum = c['Quantity'].sum()
-                if column_sum >= 4:
-                    b = self.optimal_(c)
-                    my_dict[val] = b
-            i = 1
-
-        my_dict = dict(sorted(my_dict.items(), key=lambda item: item[1], reverse=True))
-        for key in my_dict:
-            print(key, " ",my_dict[key])
+        e = self.date_range_parse(start_month, end_month, 'month')
+        resulte = e.groupby('Product').agg({'Quantity': 'sum'}).reset_index()
+        resulte = resulte[resulte["Quantity"] > 4]
+        for o in resulte["Product"]:
+            ret_price = self.optimal_price("Price", y_axis, o)
+            if ret_price != -1:
+                my_dict[o] = ret_price
+        return my_dict
 
     def linear_reg(self):
         # Step 2: Load your data
@@ -147,7 +134,7 @@ class calculations:
         # Step 3: Prepare your data
         extracted_rows = self.dataframe[self.dataframe['Product'] == 'Greeting Card']
         extracted_rows = extracted_rows.reset_index()
-        result = extracted_rows.groupby('month').agg({'Margin': 'median', 'Quantity': 'sum'}).reset_index()
+        result = extracted_rows.groupby('month').agg({'Profit': 'median', 'Quantity': 'sum'}).reset_index()
         # Extracting columns for linear regression
         X = result[['month']]  # Feature
         y = result['Quantity']  # Target
