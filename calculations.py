@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import shutil
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from sklearn.linear_model import LinearRegression
 
 
@@ -110,10 +111,7 @@ class calculations:
         # Creates a simple linear regressions
 
     def best_prod_for_season(self, start_month, end_month, y_axis):
-        lada = self.get_dataframe()['Product'].unique()
-        a = lada.tolist()
         my_dict = {}
-        i = start_month
         e = self.date_range_parse(start_month, end_month, 'month')
         resulte = e.groupby('Product').agg({'Quantity': 'sum'}).reset_index()
         resulte = resulte[resulte["Quantity"] > 4]
@@ -123,32 +121,40 @@ class calculations:
                 my_dict[o] = ret_price
         return my_dict
 
-    def linear_reg(self):
-        # Step 2: Load your data
-        # Assuming you have a DataFrame named 'df' with columns 'X_column' and 'y_column'
-        # Replace 'X_column' and 'y_column' with the actual column names in your DataFrame
-        # Example: df = pd.read_csv('your_dataset.csv')
-        # Example: X_column = df['X_column']
-        # Example: y_column = df['y_column']
-
+    def linear_reg(self, fig, product_sell, y_axis):
         # Step 3: Prepare your data
-        extracted_rows = self.dataframe[self.dataframe['Product'] == 'Greeting Card']
+        extracted_rows = self.dataframe[self.dataframe['Product'] == product_sell]
         extracted_rows = extracted_rows.reset_index()
-        result = extracted_rows.groupby('month').agg({'Profit': 'median', 'Quantity': 'sum'}).reset_index()
+        result = extracted_rows.groupby('Price').agg({'Profit': 'median', 'Quantity': 'sum'}).reset_index()
+        if extracted_rows['Profit'].min() >= 1:
+            extracted_rows = filter_out(extracted_rows, {'Price', y_axis})
+        else:
+            extracted_rows = filter_out(extracted_rows, {'Quantity'})
+            result = extracted_rows.groupby('Price').agg(
+                {'Profit': 'median', 'Quantity': 'sum', 'Cost': 'median'}).reset_index()
+        result['sum'] = result['Profit'] * result['Quantity']
+        if result.shape[0] < 3:
+            if y_axis == 'Profit':
+                y_axis = 'sum'
+            return -1
         # Extracting columns for linear regression
-        X = result[['month']]  # Feature
-        y = result['Quantity']  # Target
+        X = result[['Price']]  # Feature
+        y = result[y_axis]  # Target
         # Creating and fitting the linear regression model
         model = LinearRegression()
         model.fit(X, y)
         # Predicting Y values
         y_pred = model.predict(X)
-
+        plot1 = fig.add_subplot(111)
         # Plotting the data points and the regression line
-        plt.scatter(X, y, color='blue', label='Actual Data')
-        plt.plot(X, y_pred, color='red', label='Linear Regression')
-        plt.xlabel('Month')
-        plt.ylabel('Quantity')
-        plt.title('Linear Regression Model')
-        plt.legend()
-        plt.show()
+        plot1.scatter(X, y, color='blue', label='Actual Data')
+        plot1.plot(X, y_pred, color='red', label='Linear Regression')
+        plot1.set_xlabel('Retail Price')
+        plot1.set_ylabel(y_axis)
+        plot1.set_title('Linear Regression Model')
+        return plot1
+
+    def linear_reg1(self, product_sell):
+        aa = self.date_range_parse(1,3,"month")
+        for i in product_sell.keys():
+            print(i)
