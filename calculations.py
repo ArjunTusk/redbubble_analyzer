@@ -1,9 +1,10 @@
 import os
+import random
 
 import numpy as np
 import pandas as pd
 import shutil
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, colors
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from sklearn.linear_model import LinearRegression
 
@@ -59,6 +60,7 @@ class calculations:
         self.dataframe['Order Date'] = pd.to_datetime(self.dataframe['Order Date'])
         # Extract month and year from the 'date' column and create a new column with it
         self.dataframe['month_year'] = self.dataframe['Order Date'].dt.strftime('%y-%m')
+        self.dataframe['year'] = self.dataframe['Order Date'].dt.strftime('%y')
         self.dataframe['month'] = self.dataframe['Order Date'].dt.strftime('%m').astype(int)
         self.dataframe = self.dataframe.sort_values(by='month_year').reset_index()
 
@@ -131,7 +133,7 @@ class calculations:
         else:
             extracted_rows = filter_out(extracted_rows, {'Quantity'})
             result = extracted_rows.groupby('Price').agg(
-                {'Profit': 'median', 'Quantity': 'sum', 'Cost': 'median'}).reset_index()
+                {'Profit': 'median', 'Quantity': 'sum'}).reset_index()
         result['sum'] = result['Profit'] * result['Quantity']
         if result.shape[0] < 3:
             if y_axis == 'Profit':
@@ -154,7 +156,48 @@ class calculations:
         plot1.set_title('Linear Regression Model')
         return plot1
 
-    def linear_reg1(self, product_sell):
-        aa = self.date_range_parse(1,3,"month")
+    def bar_chart(self):
+        fig, ax = plt.subplots()
+        ax.bar(self.dataframe['year'], self.dataframe['Profit'])
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Profit')
+        ax.set_title('Bar Chart of Categories')
+        ax.show()
+        return fig
+
+    def pie_chatrt(self):
+        fig, ax = plt.subplots()
+        result = self.dataframe.groupby('Product').agg(
+            {'Profit': 'sum', 'Quantity': 'sum'}).reset_index()
+        min_amnt = 210
+        result = result[result["Profit"] >= min_amnt]
+        ax.pie(result['Profit'], labels=result['Product'], autopct='%1.1f%%', startangle=140)
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        title = 'Products that have >'+str(min_amnt)+' over the last couple of years'
+        ax.set_title(title)
+        return fig
+
+    def linear_reg1(self, product_sell, y_axis):
+        aa = self.date_range_parse(1, 3, "month")
+        gg = aa
+        list_it = []
+        models = []
+        X = gg[['month']]
+        names = list(colors.cnames)
         for i in product_sell.keys():
-            print(i)
+            list_it.append(i)
+
+        for a in range(len(list_it)):
+            result = aa[aa['Product'] == list_it[a]]
+            result = result.groupby('month').agg(
+                {'Profit': 'median', 'Quantity': 'sum'}).reset_index()
+            print(result)
+            X = result[['month']]  # Feature
+            y = result[y_axis]
+            model = LinearRegression()
+            model.fit(X, y)
+            models.append(model)
+
+        for a, model in enumerate(models):
+            plt.plot(X, model.predict(X), color=random.choice(names))
+        plt.show()
