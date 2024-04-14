@@ -57,7 +57,7 @@ def move_all_directory(folder_name):
     files_to_move = []
     for file in os.listdir(folder_name):
         if os.path.isfile(os.path.join(folder_name, file)):
-            files_to_move.append(file)
+            files_to_move.append(os.path.join(folder_name, file))
     move_multiple_files(files_to_move)
 
 
