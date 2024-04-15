@@ -1,11 +1,11 @@
 import os
 import random
 
-import numpy as np
 import pandas as pd
 import shutil
 from matplotlib import pyplot as plt, colors
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 from sklearn.linear_model import LinearRegression
 
 
@@ -77,7 +77,7 @@ class calculations:
     def add_file(self, file_path):
         # Define paths to the file and destination folder
         # Replace this with the path to your file
-        destination_folder = 'C:/Users/Pam/IdeaProjects/capstone/csvs to load'
+        destination_folder = 'C:/Users/Pam/IdeaProjects/capstone2/csvs to load'
         # Check if the file exists
         if os.path.exists(file_path):
             # Move the file to the destination folder
@@ -112,9 +112,10 @@ class calculations:
         return result.loc[result[y_axis] == result[y_axis].max(), 'Price'].values[0]
         # Creates a simple linear regressions
 
-    def best_prod_for_season(self, start_month, end_month, y_axis):
+    def best_prod_for_season(self, months, y_axis):
+        options22 = {"Jan - March": [1, 3], "April - June": [4, 6], "Jul - Sep": [7, 9], "Oct - Dec": [10, 12]}
         my_dict = {}
-        e = self.date_range_parse(start_month, end_month, 'month')
+        e = self.date_range_parse(options22[months][0], options22[months][1], 'month')
         resulte = e.groupby('Product').agg({'Quantity': 'sum'}).reset_index()
         resulte = resulte[resulte["Quantity"] > 4]
         for o in resulte["Product"]:
@@ -156,26 +157,31 @@ class calculations:
         plot1.set_title('Linear Regression Model')
         return plot1
 
-    def bar_chart(self):
+    def bar_chart(self, frame_plots):
         fig, ax = plt.subplots()
         ax.bar(self.dataframe['year'], self.dataframe['Profit'])
         ax.set_xlabel('Year')
         ax.set_ylabel('Profit')
-        ax.set_title('Bar Chart of Categories')
-        ax.show()
-        return fig
+        ax.set_title('Bar Chart of Sales YoY')
+        canvas = FigureCanvasTkAgg(fig, master=frame_plots)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=0, column=0, padx=10, pady=10)
 
-    def pie_chatrt(self):
+    def pie_chatrt(self, frame_plots):
         fig, ax = plt.subplots()
         result = self.dataframe.groupby('Product').agg(
+            {'Profit': 'sum', 'Quantity': 'sum'}).reset_index()
+        year_cnt = self.dataframe.groupby('year').agg(
             {'Profit': 'sum', 'Quantity': 'sum'}).reset_index()
         min_amnt = 210
         result = result[result["Profit"] >= min_amnt]
         ax.pie(result['Profit'], labels=result['Product'], autopct='%1.1f%%', startangle=140)
         ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-        title = 'Products that have >'+str(min_amnt)+' over the last couple of years'
+        title = 'Products that have >' + str(min_amnt) + ' over the last ' + str(len(year_cnt["year"])) + ' years'
         ax.set_title(title)
-        return fig
+        canvas = FigureCanvasTkAgg(fig, master=frame_plots)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=0, column=0, padx=10, pady=10)
 
     def linear_reg1(self, product_sell, y_axis):
         aa = self.date_range_parse(1, 3, "month")
