@@ -5,10 +5,10 @@ import pandas as pd
 import shutil
 from matplotlib import pyplot as plt, colors
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
 from sklearn.linear_model import LinearRegression
 
 
+# filters out outliers
 def filter_out(extracted_rows, axis_list):
     for i in axis_list:
         outliers = extracted_rows[
@@ -17,6 +17,7 @@ def filter_out(extracted_rows, axis_list):
     return extracted_rows
 
 
+# determines optimal price
 def profit_maximization(price, data):
     quantity_sold = data['Quantity'].sum()  # Total quantity sold
     total_revenue = price * quantity_sold  # Total revenue
@@ -26,8 +27,9 @@ def profit_maximization(price, data):
 
 class calculations:
     def __init__(self, folder_path):
-        self.counter = 0
-        self.folder_path = folder_path
+        final_path1 = os.getcwd()
+        folder_path1 = os.path.join(final_path1, folder_path)
+        self.folder_path = folder_path1
         self.dataframe = pd.DataFrame()
         self.parse_folder_path()
         self.dataframe['Retail Price (USD)'] = self.dataframe['Retail Price (USD)'] / self.dataframe['Quantity']
@@ -50,7 +52,7 @@ class calculations:
     # gets the csv files from a folder
     def parse_folder_path(self):
         # Get a list of all CSV files in the folder
-        absolute_folder_path = os.path.abspath(self.folder_path)
+        absolute_folder_path = self.folder_path
         csv_files = os.listdir(absolute_folder_path)
 
         # Iterate through each CSV file and read it into a DataFrame
@@ -77,7 +79,7 @@ class calculations:
     def add_file(self, file_path):
         # Define paths to the file and destination folder
         # Replace this with the path to your file
-        destination_folder = 'C:/Users/Pam/IdeaProjects/capstone2/csvs to load'
+        destination_folder = self.folder_path
         # Check if the file exists
         if os.path.exists(file_path):
             # Move the file to the destination folder
@@ -87,6 +89,7 @@ class calculations:
         else:
             print("File does not exist.")
 
+    # splits the data frame so that it only includes dates between start_date and end_date
     def date_range_parse(self, start_date, end_date, column_name):
         filtered_df = self.dataframe[
             (self.dataframe[column_name] >= start_date) & (self.dataframe[column_name] <= end_date)]
@@ -112,6 +115,7 @@ class calculations:
         return result.loc[result[y_axis] == result[y_axis].max(), 'Price'].values[0]
         # Creates a simple linear regressions
 
+    # determines best product for the season
     def best_prod_for_season(self, months, y_axis):
         options22 = {"Jan - March": [1, 3], "April - June": [4, 6], "Jul - Sep": [7, 9], "Oct - Dec": [10, 12]}
         my_dict = {}
@@ -157,6 +161,7 @@ class calculations:
         plot1.set_title('Linear Regression Model')
         return plot1
 
+    # creates bar chart
     def bar_chart(self, frame_plots):
         fig, ax = plt.subplots()
         ax.bar(self.dataframe['year'], self.dataframe['Profit'])
@@ -167,6 +172,7 @@ class calculations:
         canvas.draw()
         canvas.get_tk_widget().grid(row=0, column=0, padx=10, pady=10)
 
+    # creates pie chart
     def pie_chatrt(self, frame_plots):
         fig, ax = plt.subplots()
         result = self.dataframe.groupby('Product').agg(
@@ -183,6 +189,7 @@ class calculations:
         canvas.draw()
         canvas.get_tk_widget().grid(row=0, column=0, padx=10, pady=10)
 
+    # redundant linear regression
     def linear_reg1(self, product_sell, y_axis):
         aa = self.date_range_parse(1, 3, "month")
         gg = aa

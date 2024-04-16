@@ -1,21 +1,21 @@
 import tkinter as tk
 from tkinter import ttk, _setit
-
-import matplotlib.backends.backend_tkagg
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-import calculations
+import wgucapstone
 import file_add_window
 
 
+# causes drop down menu to appear
 def lo():
     drop.grid()
     frame_drp.grid()
     exit_btn.grid(row=9)
 
 
+# runs optimal price
 def run_process():
     y_axis = sec_set.get()
     product_sell = drp_.get()
@@ -23,6 +23,7 @@ def run_process():
     return final_eval
 
 
+# opens drop down menu
 def select_drop(*args):
     quant_profit = sec_set.get()
     drp_choice = drp_.get()
@@ -36,12 +37,15 @@ def select_drop(*args):
             final_mess.grid()
             plot_button.config(text="See trend line", command=lambda: show_plot(drp_choice))
             plot_button.grid()
+            frame_line.grid()
         else:
             plot_button.grid_forget()
             frame_line.grid_forget()
             final_mess.config(text="Not enough data. Add more records or try another product", width=300)
             final_mess.grid()
     else:
+        plot_button.grid_forget()
+        frame_line.grid_forget()
         index = 1
         aa = access_data.best_prod_for_season(drp_choice, quant_profit)
         final_lola = aa
@@ -58,10 +62,13 @@ def select_drop(*args):
         listbox.delete(g)
 
 
+# populate the drop down
 def print_it():
     sec_set.set(" ")
+    final_mess.grid_forget()
     frame_plots.grid_forget()
     frame_line.grid_forget()
+    frame_drp.grid_forget()
     num = int(first_set.get())
     if num == 2:
         options1 = ["Jan - March", "April - June", "Jul - Sep", "Oct - Dec"]
@@ -78,6 +85,7 @@ def print_it():
     exit_btn.grid(row=7)
 
 
+# shows linear regression graph
 def show_plot(drp_1):
     frame_line.grid_forget()
     frog1.clear()
@@ -90,6 +98,7 @@ def show_plot(drp_1):
         frame_line.grid()
 
 
+# shows bar chart or pie chart
 def show_plots(fog):
     final_mess.grid_forget()
     first_set.set(" ")
@@ -116,7 +125,7 @@ frame_drp = tk.Frame(rt_wn)
 frame_line = tk.Frame(rt_wn)
 frame_list = tk.Frame(rt_wn)
 
-access_data = calculations.calculations("csvs to load")
+access_data = wgucapstone.calculations("csvs to load")
 first_set = tk.StringVar(rt_wn, "0")
 r8_var = tk.StringVar(frame_plots, "0")
 sec_set = tk.StringVar(frame, " ")
@@ -153,7 +162,7 @@ drp_ = tk.StringVar(frame_drp, " ")
 drop = tk.OptionMenu(frame_drp, drp_, *options)
 drp_.trace_add("write", select_drop)
 
-plot_button = tk.Button(frame_drp, text="shouldbgone")
+plot_button = tk.Button(frame_line, text="shouldbgone")
 
 # Show frame 1 initially
 exit_btn = tk.Button(rt_wn, text="exit", command=rt_wn.destroy)
